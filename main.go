@@ -1,3 +1,23 @@
+// StoriChallenge.
+//
+// StoriChallenge API.
+//
+//	Schemes: http
+//	Host: localhost:8081
+//	BasePath: /
+//	Version: 1.0
+//	License: MIT http://opensource.org/licenses/MIT
+//	Contact: matiaseiglesias@yahoo.com
+//
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+//
+// swagger:meta
+
 package main
 
 import (

@@ -1,0 +1,25 @@
+{
+  "swagger": "2.0",
+  "info": {},
+  "paths": {
+    "/test/": {
+      "get": {
+        "description": "Testing endpoint",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Test"
+        ],
+        "summary": "Testing endpoint.",
+        "operationId": "hello_world",
+        "responses": {
+          "200": {
+            "description": "world\"",
+            "$ref": "#/responses/%22Hello"
+          }
+        }
+      }
+    }
+  }
+}

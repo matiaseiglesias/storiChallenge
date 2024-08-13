@@ -1,0 +1,20 @@
+version: '3.1'
+services:
+  swagger-ui:
+   image: swaggerapi/swagger-ui
+   container_name: swagger_ui_container
+   ports:
+      - "8082:8080"
+   networks:
+      - ServerNet   
+   volumes:
+      - ./doc:/usr/share/nginx/html/doc
+   environment:
+      API_URL: doc/swagger.json
+
+networks:
+  ServerNet:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.25.125.0/24
