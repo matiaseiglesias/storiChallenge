@@ -1,0 +1,9 @@
+server:
+ host: #localhost
+ port: 8081
+database:
+  host: db
+  port: 5432
+  schema: Stori
+  userID: user
+  pass: user
