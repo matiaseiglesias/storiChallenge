@@ -17,7 +17,6 @@
 //	- application/json
 //
 // swagger:meta
-
 package main
 
 import (
@@ -31,8 +30,8 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/matiaseiglesias/storiChallenge/controllers"
-	"github.com/matiaseiglesias/storiChallenge/services"
+	"github.com/matiaseiglesias/storiChallenge/internal/controllers"
+	"github.com/matiaseiglesias/storiChallenge/internal/services"
 )
 
 type AppServer struct {
