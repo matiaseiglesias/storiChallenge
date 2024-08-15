@@ -1,23 +1,55 @@
 {
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "http"
+  ],
   "swagger": "2.0",
-  "info": {},
+  "info": {
+    "description": "StoriChallenge API.",
+    "title": "StoriChallenge.",
+    "contact": {
+      "email": "matiaseiglesias@yahoo.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "http://opensource.org/licenses/MIT"
+    },
+    "version": "1.0"
+  },
+  "host": "localhost:8081",
+  "basePath": "/",
   "paths": {
-    "/test/": {
-      "get": {
-        "description": "Testing endpoint",
+    "/transactions/": {
+      "post": {
+        "description": "Process the transaction file and send summary information to a user in the form of an email.",
         "produces": [
           "application/json"
         ],
         "tags": [
-          "Test"
+          "Transactions"
         ],
-        "summary": "Testing endpoint.",
-        "operationId": "hello_world",
+        "summary": "Process the transaction file and send summary information to a user in the form of an email.",
+        "operationId": "makeSummary",
         "responses": {
           "200": {
-            "description": "world\"",
-            "$ref": "#/responses/%22Hello"
+            "$ref": "#/responses/SummaryResponse"
           }
+        }
+      }
+    }
+  },
+  "responses": {
+    "SummaryResponse": {
+      "description": "SummaryResponse\n\n# Transactions summary response",
+      "headers": {
+        "Status": {
+          "type": "string",
+          "description": "This text will appear as description of your request body."
         }
       }
     }
