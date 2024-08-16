@@ -1,13 +1,15 @@
 package models
 
+import "github.com/shopspring/decimal"
+
 type TransactionsCount struct {
 	Month  string
 	Amount uint
 }
 
 type Summary struct {
-	TotalBalance      float64
+	TotalBalance      decimal.Decimal
 	TransactionsCount []TransactionsCount
-	AverageCredit     float64
-	AverageDebit      float64
+	AverageCredit     decimal.Decimal
+	AverageDebit      decimal.Decimal
 }

@@ -15,3 +15,9 @@ type Transaction struct {
 	Amount float32
 	Type   TransactionType
 }
+
+type TransactionCsv struct {
+	Id          string
+	Date        string
+	Transaction string
+}
