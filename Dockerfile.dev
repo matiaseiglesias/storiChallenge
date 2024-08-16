@@ -1,0 +1,11 @@
+FROM golang:1.22.5
+
+ADD . /home
+ADD ./mail_template /mail_template
+ADD ./transactions_files /transactions_files
+        
+WORKDIR /home
+
+RUN go mod tidy
+
+CMD ["sh","run_test.sh"]
