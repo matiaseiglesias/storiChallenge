@@ -1,9 +1,18 @@
 server:
  host: #localhost
- port: 8081
+ port: 8080
 database:
   host: db
   port: 5432
   schema: Stori
   userID: user
   pass: user
+smtpserver:
+  host: smtp.example.org
+  port: 25
+  password: my-password
+  from: my-email
+emailtemplate:
+  path: /mail_template/summary.html
+transactionfile:
+  directory: /transactions_files/

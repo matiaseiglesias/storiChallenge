@@ -21,12 +21,15 @@
     },
     "version": "1.0"
   },
-  "host": "localhost:8081",
+  "host": "localhost:8080",
   "basePath": "/",
   "paths": {
-    "/transactions/": {
+    "/transactions/summaries": {
       "post": {
-        "description": "Process the transaction file and send summary information to a user in the form of an email.",
+        "description": "This endpoint processes the transaction file associated with a given account and sends a summary\nof the transactions to the specified email address.",
+        "consumes": [
+          "application/json"
+        ],
         "produces": [
           "application/json"
         ],
@@ -35,23 +38,73 @@
         ],
         "summary": "Process the transaction file and send summary information to a user in the form of an email.",
         "operationId": "makeSummary",
+        "parameters": [
+          {
+            "name": "Data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SummaryRequest"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "$ref": "#/responses/SummaryResponse"
+            "description": "Response",
+            "schema": {
+              "$ref": "#/definitions/Response"
+            }
+          },
+          "400": {
+            "description": "Response",
+            "schema": {
+              "$ref": "#/definitions/Response"
+            }
+          },
+          "500": {
+            "description": "Response",
+            "schema": {
+              "$ref": "#/definitions/Response"
+            }
           }
         }
       }
     }
   },
-  "responses": {
-    "SummaryResponse": {
-      "description": "SummaryResponse\n\n# Transactions summary response",
-      "headers": {
-        "Status": {
+  "definitions": {
+    "Response": {
+      "description": "This is a generic response structure.",
+      "type": "object",
+      "title": "Response",
+      "properties": {
+        "message": {
+          "description": "A message providing additional details about the response.",
           "type": "string",
-          "description": "This text will appear as description of your request body."
+          "x-go-name": "Message",
+          "example": "\"Email sent successfully\""
+        },
+        "status": {
+          "description": "The status of the response, indicating success or error.",
+          "type": "string",
+          "x-go-name": "Status",
+          "example": "\"success\""
         }
-      }
+      },
+      "x-go-package": "github.com/matiaseiglesias/storiChallenge/internal/dto"
+    },
+    "SummaryRequest": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "type": "string",
+          "x-go-name": "Account"
+        },
+        "email": {
+          "type": "string",
+          "x-go-name": "Email"
+        }
+      },
+      "x-go-package": "github.com/matiaseiglesias/storiChallenge/internal/dto"
     }
   }
 }
