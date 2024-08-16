@@ -2,37 +2,37 @@ package services
 
 import (
 	"fmt"
-	"html/template"
 	"net/smtp"
-	"os"
 
-	"github.com/matiaseiglesias/storiChallenge/internal/models"
+	"github.com/matiaseiglesias/storiChallenge/config"
+	customerrors "github.com/matiaseiglesias/storiChallenge/internal/custom_errors"
 )
 
-type EmailSenderService struct {
+type EmailSenderService interface {
+	Send(to string, message []byte) error
+}
+
+type EmailSenderServiceImpl struct {
 	From        string
 	Credentials smtp.Auth
 	Port        string
 	Host        string
 }
 
-func CreateEmailSenderService() *EmailSenderService {
+func CreateEmailSenderService(smtServerConfig config.Smtpserver) *EmailSenderServiceImpl {
 
 	// Sender data
-	from := ""
-	password := ""
-	// password := os.Getenv("EMAIL_PASSWORD")
-
-	// Receiver email address
+	from := smtServerConfig.From
+	password := smtServerConfig.Password
 
 	// SMTP server configuration
-	smtpHost := "smtp.mailgun.org"
-	smtpPort := "587"
+	smtpHost := smtServerConfig.Host
+	smtpPort := smtServerConfig.Port
 
 	// Authentication
 	auth := smtp.PlainAuth("", from, password, smtpHost)
 
-	return &EmailSenderService{
+	return &EmailSenderServiceImpl{
 		From:        from,
 		Credentials: auth,
 		Port:        smtpPort,
@@ -40,43 +40,11 @@ func CreateEmailSenderService() *EmailSenderService {
 	}
 }
 
-func (s *EmailSenderService) Send(to string) {
-	subject := "Subject: Hello World\n"
-	body := "Hello, World!"
-	message := []byte(subject + "\n" + body)
+func (s *EmailSenderServiceImpl) Send(to string, message []byte) error {
 	err := smtp.SendMail(s.Host+":"+s.Port, s.Credentials, s.From, []string{to}, message)
 	if err != nil {
 		fmt.Println("Error sending email:", err)
-		return
+		return &customerrors.EmailError{Message: "error while sending email, try later"}
 	}
-}
-
-func (s *EmailSenderService) CreateSummaryTemplate() {
-
-	t1 := models.TransactionsCount{
-		Month:  "July",
-		Amount: 10,
-	}
-
-	t2 := models.TransactionsCount{
-		Month:  "June",
-		Amount: 100,
-	}
-
-	st := models.Summary{
-		TotalBalance:      10,
-		TransactionsCount: []models.TransactionsCount{t1, t2},
-		AverageCredit:     210,
-		AverageDebit:      110,
-	}
-	name := "/home/matiasei/Documentos/storiChallenge/mailTemplate/summary.html"
-	tmpl, err := template.ParseFiles(name)
-	if err != nil {
-		panic(err)
-	}
-	// Execute the template with your data
-	err = tmpl.Execute(os.Stdout, st)
-	if err != nil {
-		panic(err)
-	}
+	return nil
 }

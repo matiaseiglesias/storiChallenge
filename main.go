@@ -3,7 +3,7 @@
 // StoriChallenge API.
 //
 //	Schemes: http
-//	Host: localhost:8081
+//	Host: localhost:8080
 //	BasePath: /
 //	Version: 1.0
 //	License: MIT http://opensource.org/licenses/MIT
@@ -30,7 +30,11 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/matiaseiglesias/storiChallenge/config"
 	"github.com/matiaseiglesias/storiChallenge/internal/controllers"
+	"github.com/matiaseiglesias/storiChallenge/internal/database"
+	_ "github.com/matiaseiglesias/storiChallenge/internal/dto"
+	"github.com/matiaseiglesias/storiChallenge/internal/repositories"
 	"github.com/matiaseiglesias/storiChallenge/internal/services"
 )
 
@@ -42,15 +46,19 @@ type AppServer struct {
 }
 
 func SetupApp() (*AppServer, error) {
+	var config = config.LoadConfig()
 	r := gin.Default()
 	config_ := cors.DefaultConfig()
 	config_.AllowAllOrigins = true
 	r.Use(cors.New(config_))
 
-	var services = services.CreateServices()
+	var db = database.Innit(&config.DataBase)
+	var repositories = repositories.CreateRepositories(db)
+	var services = services.CreateServices(config, repositories)
 	var controllers = controllers.CreateControllers(services, r)
 
-	var host = "localhost:8080"
+	var host = config.Server.Host + ":" + config.Server.Port
+
 	return &AppServer{
 		Router:      r,
 		Services:    services,

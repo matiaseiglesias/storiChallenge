@@ -1,89 +1,126 @@
 package services
 
 import (
-	"encoding/csv"
-	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 
-	"github.com/matiaseiglesias/storiChallenge/internal/dto"
+	"github.com/matiaseiglesias/storiChallenge/config"
+	customerrors "github.com/matiaseiglesias/storiChallenge/internal/custom_errors"
 	"github.com/matiaseiglesias/storiChallenge/internal/models"
+	"github.com/matiaseiglesias/storiChallenge/internal/repositories"
+	"github.com/shopspring/decimal"
 )
 
-type TransactionsService struct {
+type TransactionService interface {
+	NotifyTransactionSummary(account string, email string) error
 }
 
-func CreateTransactionsService() *TransactionsService {
-	return &TransactionsService{}
+type TransactionServiceImpl struct {
+	transactionDirectory            string
+	summaryRepository               repositories.TransactionsSummaryRepository
+	transactionFileProcessorService TransactionFileProcessorService
+	emailSenderService              EmailSenderService
+	transactionSummaryEmailService  TransactionSummaryEmailService
 }
 
-func (s *TransactionsService) ProccesTransactionFile(filename string) []dto.TransactionCsv {
-	// Open the CSV file
-	file, err := os.Open(filename)
+func CreateTransactionsService(config config.TransactionFile, ransactionsSummaryRepository repositories.TransactionsSummaryRepository, transactionFileProcessor TransactionFileProcessorService, emailSender EmailSenderService, transactionSummary TransactionSummaryEmailService) *TransactionServiceImpl {
+	return &TransactionServiceImpl{
+		transactionDirectory:            config.Directory,
+		summaryRepository:               ransactionsSummaryRepository,
+		transactionFileProcessorService: transactionFileProcessor,
+		emailSenderService:              emailSender,
+		transactionSummaryEmailService:  transactionSummary,
+	}
+}
+
+// NotifyTransactionSummary generates a transaction summary for a given account
+// and sends it via email.
+//
+// Parameters:
+//   - account: The account identifier for which the transaction summary will be calculated.
+//   - email: The recipient's email address where the summary will be sent.
+//
+// Returns:
+//   - error: An error is returned if there is an issue with input validation,
+//     summary calculation, email template creation, or email sending.
+func (s *TransactionServiceImpl) NotifyTransactionSummary(account string, email string) error {
+
+	if account == "" || email == "" {
+		return &customerrors.EmptyFieldError{Message: "Empty field"}
+	}
+	summary, err := s.CalculateSummary(account)
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return err
 	}
-	defer file.Close()
-
-	// Read the CSV data
-	reader := csv.NewReader(file)
-	reader.FieldsPerRecord = -1 // Allow variable number of fields
-
-	// Read and skip the header
-	if _, err := reader.Read(); err != nil {
-		fmt.Println("Error reading header:", err)
-	}
-
-	data, err := reader.ReadAll()
+	emailContent, err := s.transactionSummaryEmailService.CreateSummaryTemplate(summary)
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return err
 	}
+	s.summaryRepository.SaveTransactionSummary(summary)
 
-	transactions := []dto.TransactionCsv{}
-
-	// Print the CSV data
-	for _, row := range data {
-		transactions = append(transactions, dto.TransactionCsv{
-			Id:          row[0],
-			Date:        row[1],
-			Transaction: row[2],
-		})
-		fmt.Println()
+	err = s.emailSenderService.Send(email, emailContent)
+	if err != nil {
+		log.Println(err)
+		return err
 	}
-	return transactions
+	return nil
 }
 
-func (s *TransactionsService) CalculateSummary(filename string) *models.Summary {
+// CalculateSummary processes a transaction file associated with the given account
+// and calculates a summary of the transactions. The summary includes the total balance,
+// average credit, average debit, and the count of transactions per month.
+//
+// Parameters:
+//   - account: The account identifier used to locate the transaction file.
+//
+// Returns:
+//   - *models.Summary: A pointer to the Summary struct containing the calculated summary details.
+//   - error: An error is returned if there is an issue processing the transaction file.
+func (s *TransactionServiceImpl) CalculateSummary(account string) (*models.Summary, error) {
 
-	debitsAmount := 0.0
-	debitsCount := 0
-	creditsAmount := 0.0
-	creditsCount := 0
+	debitsAmount := decimal.NewFromInt(0)
+	debitsCount := int32(0)
+	creditsAmount := decimal.NewFromInt(0)
+	creditsCount := int32(0)
 	transactionsByMonth := make(map[string]uint)
 
-	transactions := s.ProccesTransactionFile(filename)
+	filename := s.transactionDirectory + account + ".csv"
+
+	transactions, err := s.transactionFileProcessorService.ProcessTransactionFile(filename)
+	if err != nil {
+		return nil, &customerrors.ProcessTransactionError{Message: "Error while processing transactions"}
+	}
+
 	for _, transaction := range transactions {
 		i, _ := strconv.ParseFloat(strings.TrimSpace(transaction.Transaction[1:]), 64)
 		monthName := GetMonthName(transaction.Date)
 		transactionsByMonth[monthName] += 1
 		if transaction.Transaction[0] == '+' {
-			debitsAmount += i
+			debitsAmount = debitsAmount.Add(decimal.NewFromFloat(i))
 			debitsCount += 1
 		} else {
-			creditsAmount += i
+			creditsAmount = creditsAmount.Add(decimal.NewFromFloat(i))
 			creditsCount += 1
 		}
 	}
-	summary := models.Summary{
-		TotalBalance:      debitsAmount - creditsAmount,
-		AverageCredit:     creditsAmount / float64(creditsCount),
-		AverageDebit:      debitsAmount / float64(debitsCount),
+	avarageCredit := decimal.NewFromFloat(0.0)
+	if creditsCount > 0 {
+		avarageCredit = creditsAmount.Div(decimal.NewFromInt32(creditsCount))
+	}
+	avarageDebit := decimal.NewFromFloat(0.0)
+	if debitsCount > 0 {
+		avarageDebit = debitsAmount.Div(decimal.NewFromInt32(debitsCount))
+	}
+	summary := &models.Summary{
+		TotalBalance:      debitsAmount.Sub(creditsAmount),
+		AverageCredit:     avarageCredit,
+		AverageDebit:      avarageDebit,
 		TransactionsCount: mapTransactionsCount(&transactionsByMonth),
 	}
-	log.Println(transactionsByMonth)
-	return &summary
+	return summary, nil
 }
 
 func mapTransactionsCount(transactionsByMonth *map[string]uint) []models.TransactionsCount {
@@ -93,6 +130,7 @@ func mapTransactionsCount(transactionsByMonth *map[string]uint) []models.Transac
 			Month:  k,
 			Amount: v,
 		})
+
 	}
 	return transactionsCountByMonth
 }
