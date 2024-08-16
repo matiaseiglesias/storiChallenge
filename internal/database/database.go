@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/matiaseiglesias/storiChallenge/config"
+	"github.com/matiaseiglesias/storiChallenge/internal/dto"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -26,7 +27,7 @@ func Innit(config *config.Database) *DataBase {
 		panic("failed to connect database")
 	}
 
-	// err = database.AutoMigrate(&models.NFT{}, &models.User{}, &models.Image{})
+	err = database.AutoMigrate(&dto.SummaryDto{}, &dto.TransactionsCountDto{})
 
 	if err != nil {
 		log.Println("Error: ", err)
